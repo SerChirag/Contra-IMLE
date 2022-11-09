@@ -113,7 +113,7 @@ class RandomDataset(data.Dataset):
 class ZippedDataset(data.Dataset):
 
     def __init__(self, *datasets):
-        assert all(len(datasets[0]) == len(dataset) for dataset in datasets)
+        #assert all(len(datasets[0]) == len(dataset) for dataset in datasets)
         self.datasets = datasets
 
     def __getitem__(self, index):
@@ -212,7 +212,9 @@ class IMLE():
             self.feature_vectors = pickle.load(f)
 
     def get_latent(self,num_of_samples):
-        z_dim = self.model.module.z_dim[0]
+        print(self.model)
+        z_dim = self.model.z_dim[0]
+        #z_dim = 256
         class_condition = np.random.randint(1, 10, size=num_of_samples)
         sample_condition = np.random.randint(0, 5000, size=num_of_samples)
         samples = []
@@ -225,6 +227,7 @@ class IMLE():
         noisy_samples = np.expand_dims(noisy_samples, axis=-1).astype(np.float32)
         #return torch.randn(*((num_of_samples,)+self.z_dim))
         return torch.from_numpy(noisy_samples)
+        
 
     def set_lr(self, lr):
         # Set new learning rate
