@@ -210,6 +210,8 @@ class IMLE():
     def load_features(self):
         with open('feature_vectors.pkl', 'rb') as f:
             self.feature_vectors = pickle.load(f)
+            print(self.feature_vectors[0])
+            exit()
 
     def get_latent(self,num_of_samples):
         print(self.model)
@@ -766,7 +768,7 @@ def main():
     testset = torchdata.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
     classes = ('plane', 'car', 'bird', 'cat','deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
+     
     args = parser.parse_args()
     args.device = None
     if not args.disable_cuda and torch.cuda.is_available():
