@@ -41,6 +41,10 @@ class CIFAR10Module(pl.LightningModule):
 
         self.model = all_classifiers[self.hparams.classifier]
 
+    def accuracy(self):
+        #put the kmeans alg here
+        return 0
+
     def forward(self, batch):
         images, labels = batch
         #predictions = self.model(images)
@@ -49,7 +53,8 @@ class CIFAR10Module(pl.LightningModule):
         embeddings = self.model(images)
         #hard_pairs = self.miner(embeddings, labels)
         loss = self.criterion(embeddings, labels)
-        accuracy = self.accuracy(embeddings, labels)
+        #accuracy = self.accuracy(embeddings, labels)
+        accuracy = 0
         return loss, accuracy * 100
 
     def training_step(self, batch, batch_nb):

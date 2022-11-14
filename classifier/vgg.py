@@ -37,7 +37,7 @@ class VGG(nn.Module):
         x = self.features(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        x = self.classifier(x)
+        #x = self.classifier(x)
         return x
 
     def _initialize_weights(self):

@@ -19,7 +19,7 @@ def main(args):
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 
         if args.logger == "wandb":
-            logger = WandbLogger(name=args.classifier, project="cifar10")
+            logger = WandbLogger(name="triplet_lr" + str(args.learning_rate), project="cifar10")
         elif args.logger == "tensorboard":
             logger = TensorBoardLogger("cifar10", name=args.classifier)
 
@@ -41,6 +41,10 @@ def main(args):
         data = CIFAR10Data(args)
 
         if bool(args.pretrained):
+            # Set desired pt path here
+            # state_dict = os.path.join(
+            #   "cifar10", "fxv8rjdl", "epoch=4-step=974.ckpt"
+            # )
             state_dict = os.path.join(
                 "cifar10_models", "state_dicts", args.classifier + ".pt"
             )
