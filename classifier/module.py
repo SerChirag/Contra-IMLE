@@ -36,25 +36,25 @@ class CIFAR10Module(pl.LightningModule):
         #self.criterion = torch.nn.CrossEntropyLoss()
         #self.miner = miners.MultiSimilarityMiner()
         self.criterion = losses.TripletMarginLoss(margin=0, smooth_loss=True)
+        #self.criterion = losses.CentroidTripletLoss()
 
         self.accuracy = Accuracy()
 
         self.model = all_classifiers[self.hparams.classifier]
 
-    def accuracy(self):
-        #put the kmeans alg here
-        return 0
+    # def accuracy(self):
+    #     #put the kmeans alg here
+    #     return 0
 
     def forward(self, batch):
         images, labels = batch
-        #predictions = self.model(images)
-        #loss = self.criterion(predictions, labels)
-        #accuracy = self.accuracy(predictions, labels)
+        # predictions = self.model(images)
+        # loss = self.criterion(predictions, labels)
+        # accuracy = self.accuracy(predictions, labels)
         embeddings = self.model(images)
-        #hard_pairs = self.miner(embeddings, labels)
+        # hard_pairs = self.miner(embeddings, labels)
         loss = self.criterion(embeddings, labels)
-        #accuracy = self.accuracy(embeddings, labels)
-        accuracy = 0
+        accuracy = self.accuracy(embeddings, labels)
         return loss, accuracy * 100
 
     def training_step(self, batch, batch_nb):

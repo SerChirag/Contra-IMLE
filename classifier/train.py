@@ -17,13 +17,14 @@ def main(args):
     else:
         seed_everything(0)
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+        model_name = "ogmodel_nomargin_smoothloss_mtl_lr" + str(args.learning_rate)
 
         if args.logger == "wandb":
-            logger = WandbLogger(name="triplet_lr" + str(args.learning_rate), project="cifar10")
+            logger = WandbLogger(name=model_name, project="cifar10")
         elif args.logger == "tensorboard":
             logger = TensorBoardLogger("cifar10", name=args.classifier)
 
-        checkpoint = ModelCheckpoint(monitor="acc/val", mode="max", save_last=False)
+        checkpoint = ModelCheckpoint(filename=model_name + '{epoch}', monitor="acc/val", mode="max", save_last=False)
 
         trainer = Trainer(
             fast_dev_run=bool(args.dev),
@@ -40,15 +41,14 @@ def main(args):
         model = CIFAR10Module(args)
         data = CIFAR10Data(args)
 
-        if bool(args.pretrained):
+        if bool(args.pretrained_cp):
             # Set desired pt path here
             # state_dict = os.path.join(
             #   "cifar10", "fxv8rjdl", "epoch=4-step=974.ckpt"
             # )
-            state_dict = os.path.join(
-                "cifar10_models", "state_dicts", args.classifier + ".pt"
-            )
-            model.model.load_state_dict(torch.load(state_dict))
+            checkpoint_path = args.pretrained_data
+            model.load_from_checkpoint(checkpoint_path)
+            #model.model.load_state_dict(torch.load(state_dict))
 
         if bool(args.test_phase):
             print("Testing the model ", args.classifier)
@@ -73,7 +73,10 @@ if __name__ == "__main__":
     # TRAINER args
     parser.add_argument("--classifier", type=str, default="resnet18")
     parser.add_argument("--pretrained", type=int, default=0, choices=[0, 1])
-
+    parser.add_argument("--pretrained_cp", type=int, default=0, choices=[0, 1])
+    parser.add_argument("--pretrained_data", type=str, default=os.path.join("cifar10_models",
+                                                                            "state_dicts",
+                                                                            "resnet18.pt"))
     parser.add_argument("--precision", type=int, default=32, choices=[16, 32])
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--max_epochs", type=int, default=100)

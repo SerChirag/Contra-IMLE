@@ -25,7 +25,8 @@ class VGG(nn.Module):
             # nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(4096, 4096),
+            nn.Linear(4096, 4096))
+        self.classifier2 = nn.Sequential(
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, num_classes),
@@ -37,7 +38,8 @@ class VGG(nn.Module):
         x = self.features(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        #x = self.classifier(x)
+        x = self.classifier(x)
+        x = self.classifier2(x)
         return x
 
     def _initialize_weights(self):
