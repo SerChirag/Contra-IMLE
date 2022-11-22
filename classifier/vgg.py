@@ -121,7 +121,7 @@ cfgs = {
 }
 
 
-def _vgg(arch, cfg, batch_norm, pretrained, progress, device, **kwargs):
+def _vgg(arch, cfg, batch_norm, pretrained, progress, device, **kwargs) -> VGG:
     if pretrained:
         kwargs["init_weights"] = False
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
@@ -144,7 +144,7 @@ def vgg11_bn(pretrained=False, progress=True, device="cpu", **kwargs):
     return _vgg("vgg11_bn", "A", True, pretrained, progress, device, **kwargs)
 
 
-def vgg13_bn(pretrained=False, progress=True, device="cpu", **kwargs):
+def vgg13_bn(pretrained=False, progress=True, device="cpu", **kwargs) -> _vgg:
     """VGG 13-layer model (configuration "B") with batch normalization
 
     Args:
