@@ -36,7 +36,7 @@ class CIFAR10Module(pl.LightningModule):
         self.hparams = hparams
 
         self.miner = miners.MultiSimilarityMiner()
-        self.tripletlossmetric = losses.TripletMarginLoss(margin=1, smooth_loss=True)
+        self.tripletlossmetric = losses.TripletMarginLoss(margin=self.hparams.triplet_margin, smooth_loss=True)
         self.criterion = torch.nn.CrossEntropyLoss()
 
         self.accuracy = Accuracy()
