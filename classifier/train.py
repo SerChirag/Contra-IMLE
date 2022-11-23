@@ -17,7 +17,7 @@ def main(args):
     else:
         seed_everything(0)
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
-        model_name = "combinedmodel_" + str(args.triplet_margin) + "margin_smoothloss_mtl_lr" + str(args.learning_rate)
+        model_name = "combinedmodel_" + str(args.triplet_margin) + "margin_ctl_lr" + str(args.learning_rate)
 
         if args.logger == "wandb":
             logger = WandbLogger(name=model_name, project="cifar10")
