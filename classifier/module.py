@@ -12,6 +12,8 @@ from scheduler import WarmupCosineLR
 from pytorch_metric_learning import losses, miners, regularizers
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
+import torch.nn as nn
+import torch
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn(),
@@ -35,8 +37,8 @@ class CIFAR10Module(pl.LightningModule):
         super().__init__()
         self.hparams = hparams
 
-        self.miner = miners.MultiSimilarityMiner()
-        self.tripletlossmetric = losses.TripletMarginLoss(margin=self.hparams.triplet_margin, smooth_loss=True)
+        #self.miner = miners.MultiSimilarityMiner()
+        #self.tripletlossmetric = losses.TripletMarginLoss(margin=self.hparams.triplet_margin, smooth_loss=True)
         self.criterion = torch.nn.CrossEntropyLoss()
 
         self.accuracy = Accuracy()
@@ -45,16 +47,32 @@ class CIFAR10Module(pl.LightningModule):
         self.tsne = TSNE(random_state=0)
         self.tripletlossconstant = self.hparams.triplet_constant
 
-    # def forward(self, batch):
-    #     images, labels = batch
-    #     # predictions = self.model(images)
-    #     # loss = self.criterion(predictions, labels)
-    #     # accuracy = self.accuracy(predictions, labels)
-    #     embeddings = self.model(images)
-    #     # hard_pairs = self.miner(embeddings, labels)
-    #     loss = self.criterion(embeddings, labels)
-    #     accuracy = self.accuracy(embeddings, labels)
-    #     return loss, accuracy * 100
+        self.tripletlossmetric = nn.TripletMarginLoss(margin=self.hparams.triplet_margin, reduction='sum')
+
+    def calculate_centroids(self, embeddings, labels):
+        positives = torch.zeros(embeddings.size())  # should be Batch x Embedding
+        negatives = torch.zeros(embeddings.size())
+        for i in range(embeddings.size(dim=0)):
+            curLabel = labels[i]
+            posLabels = labels == curLabel
+            posLabels = posLabels.nonzero()
+            negLabels = labels != curLabel
+            negLabels = negLabels.nonzero()
+            positiveExamples = embeddings[posLabels]
+            # Negative samples should be changed, instead create one for each class, but this is much easier
+            negativeExamples = embeddings[negLabels]
+            mean_pos = torch.mean(positiveExamples, dim=0)
+            mean_neg = torch.mean(negativeExamples, dim=0)
+            positives[i] = mean_pos
+            negatives[i] = mean_neg
+        return positives.cuda(), negatives.cuda()
+
+    def calculate_loss_acc2(self, embeddings, predictions, labels):
+        accuracy = self.accuracy(predictions, labels)
+        positive, negative = self.calculate_centroids(embeddings, labels)
+        triplet_loss = self.tripletlossmetric(embeddings, positive, negative)
+        classifier_loss = self.criterion(predictions, labels)
+        return self.tripletlossconstant * triplet_loss, classifier_loss, accuracy * 100
 
     def execute_model(self, batch):
         images, labels = batch
@@ -72,7 +90,7 @@ class CIFAR10Module(pl.LightningModule):
 
     def forward(self, batch):
         embeddings, predictions, labels = self.execute_model(batch)
-        loss1, loss2, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
+        loss1, loss2, accuracy = self.calculate_loss_acc2(embeddings, predictions, labels)
         return loss1, loss2, accuracy
 
     def calculate_loss_acc(self, embeddings, predictions, labels):
@@ -84,7 +102,7 @@ class CIFAR10Module(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
         embeddings, predictions, labels = self.execute_model(batch)
-        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
+        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc2(embeddings, predictions, labels)
         # if batch_nb == 99:
         #     self.display_results(embeddings, labels, batch_nb)
 
@@ -103,7 +121,7 @@ class CIFAR10Module(pl.LightningModule):
 
     def test_step(self, batch, batch_nb):
         embeddings, predictions, labels = self.execute_model(batch)
-        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
+        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc2(embeddings, predictions, labels)
         #self.display_results(embeddings, labels)
         self.log("acc/test", accuracy)
 
