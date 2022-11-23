@@ -17,7 +17,7 @@ def main(args):
     else:
         seed_everything(0)
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
-        model_name = "combinedmodel_0.5margin_smoothloss_mtl_lr" + str(args.learning_rate)
+        model_name = "combinedmodel_" + str(args.triplet_margin) + "margin_smoothloss_mtl_lr" + str(args.learning_rate)
 
         if args.logger == "wandb":
             logger = WandbLogger(name=model_name, project="cifar10")
@@ -85,6 +85,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--learning_rate", type=float, default=1e-2)
     parser.add_argument("--weight_decay", type=float, default=1e-2)
+    parser.add_argument("--triplet_margin", type=float, default=0.05)
+    parser.add_argument("--triplet_constant", type=float, default=1)
 
     args = parser.parse_args()
     main(args)

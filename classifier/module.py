@@ -43,6 +43,7 @@ class CIFAR10Module(pl.LightningModule):
 
         self.model = all_classifiers[self.hparams.classifier]
         self.tsne = TSNE(random_state=0)
+        self.tripletlossconstant = self.hparams.triplet_constant
 
     # def forward(self, batch):
     #     images, labels = batch
@@ -64,12 +65,10 @@ class CIFAR10Module(pl.LightningModule):
         predictions = self.model.classifier2(x)
         return embeddings, predictions, labels
 
-    def display_results(self, embeddings, labels, batch_nb):
-        if batch_nb == 99:
-            train_tsne_embeds = self.tsne.fit_transform(embeddings.cpu().detach().numpy())
-            print(train_tsne_embeds)
-            plt.scatter(train_tsne_embeds[:, 0], train_tsne_embeds[:, 1], c=labels.cpu().numpy())
-            plt.show()
+    def display_results(self, embeddings, labels):
+        train_tsne_embeds = self.tsne.fit_transform(embeddings.cpu().detach().numpy())
+        plt.scatter(train_tsne_embeds[:, 0], train_tsne_embeds[:, 1], c=labels.cpu().numpy())
+        plt.show()
 
     def forward(self, batch):
         embeddings, predictions, labels = self.execute_model(batch)
@@ -81,12 +80,13 @@ class CIFAR10Module(pl.LightningModule):
         hard_pairs = self.miner(embeddings, labels)
         triplet_loss = self.tripletlossmetric(embeddings, labels, hard_pairs)
         classifier_loss = self.criterion(predictions, labels)
-        return triplet_loss, classifier_loss, accuracy * 100
+        return self.tripletlossconstant * triplet_loss, classifier_loss, accuracy * 100
 
     def training_step(self, batch, batch_nb):
         embeddings, predictions, labels = self.execute_model(batch)
         triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
-        #self.display_results(embeddings, labels, batch_nb)
+        # if batch_nb == 99:
+        #     self.display_results(embeddings, labels, batch_nb)
 
         self.log("loss/train_triplet", triplet_loss)
         self.log("loss/train_cls", cls_loss)
@@ -102,7 +102,9 @@ class CIFAR10Module(pl.LightningModule):
         self.log("acc/val", accuracy)
 
     def test_step(self, batch, batch_nb):
-        triplet_loss, cls_loss, accuracy = self.forward(batch)
+        embeddings, predictions, labels = self.execute_model(batch)
+        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
+        #self.display_results(embeddings, labels)
         self.log("acc/test", accuracy)
 
     def configure_optimizers(self):
