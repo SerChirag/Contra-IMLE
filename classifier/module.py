@@ -47,7 +47,7 @@ class CIFAR10Module(pl.LightningModule):
         self.tsne = TSNE(random_state=0)
         self.tripletlossconstant = self.hparams.triplet_constant
 
-        self.tripletlossmetric = nn.TripletMarginLoss(margin=self.hparams.triplet_margin, reduction='sum')
+        self.tripletlossmetric = nn.TripletMarginLoss(margin=self.hparams.triplet_margin, reduction='mean')
 
     def calculate_centroids(self, embeddings, labels):
         positives = torch.zeros(embeddings.size())  # should be Batch x Embedding
