@@ -211,8 +211,8 @@ class IMLE():
         with open('feature_vectors.pkl', 'rb') as f:
             self.feature_vectors = pickle.load(f)
 
-    def get_latent(self,num_of_samples):
-        z_dim = self.model.module.z_dim[0]
+    def get_latent(self, num_of_samples):
+        z_dim = self.model.z_dim[0]
         class_condition = np.random.randint(1, 10, size=num_of_samples)
         sample_condition = np.random.randint(0, 5000, size=num_of_samples)
         samples = []

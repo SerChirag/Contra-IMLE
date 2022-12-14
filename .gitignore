@@ -1,0 +1,10 @@
+classifier/state_dicts.zip
+
+classifier/checkpoints
+classifier/cifar10
+classifier/cifar10_models
+classifier/__pycache__
+
+*pycache*
+
+.idea
