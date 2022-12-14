@@ -1,9 +1,10 @@
 
-Weights: https://1sfu-my.sharepoint.com/:u:/g/personal/cva19_sfu_ca/EUqqwCBqdxFHia2Xm1UXLugBE9ABm0roXE4ToGHFaDS3kw?e=BDehHH
+VGG13 BN Weights: https://1sfu-my.sharepoint.com/:u:/g/personal/cva19_sfu_ca/EUqqwCBqdxFHia2Xm1UXLugBE9ABm0roXE4ToGHFaDS3kw?e=BDehHH
 
 
 
 For Classifier
+- Remember to login to Wandb, it will also work though without a login, but you miss out on the graphs
 
 #Download pretrained weights
 python train.py --download_weights 1 
