@@ -223,26 +223,11 @@ class IMLE():
             samples.append(self.feature_vectors[class_condition[i]][sample_condition[i]])
         samples=np.array(samples)
         noise = np.random.normal(0, np.sqrt(1.0/z_dim)*self.distance_separation , (num_of_samples,z_dim))
-        print(self.feature_vectors.size())
-        self.plot_noisegraph("noiseplot.png", samples, samples+noise)
         noisy_samples_og = normalize(samples+noise,axis=1)
         noisy_samples = np.expand_dims(noisy_samples_og, axis=-1)
         noisy_samples = np.expand_dims(noisy_samples, axis=-1).astype(np.float32)
         #return torch.randn(*((num_of_samples,)+self.z_dim))
         return torch.from_numpy(noisy_samples)
-
-    def plot_noisegraph(self, file_name: str, og_samples: np.ndarray, noisy_samples: np.ndarray) -> None:
-        # Projects and display original and noisy samples on a 3D sphere
-        og_tsne_embeds = self.tsne.fit_transform(og_samples)
-        noisy_tsne_embeds = self.tsne.fit_transform(noisy_samples)
-        fig, ax = plt.figure()
-        ax.scatter(og_tsne_embeds[:, 0], og_tsne_embeds[:, 1], c='tab:green', label="Original")
-        ax.scatter(noisy_tsne_embeds[:, 0], noisy_tsne_embeds[:, 1], c='tab:red', label="Noisy")
-        ax.legend()
-        #plt.scatter(train_tsne_embeds[:, 0], train_tsne_embeds[:, 1], c=labels.cpu().numpy(), label="Noisy")
-        fig.savefig(file_name)
-        plt.close(fig)
-        print("Noise plot saved to %s. " % (file_name))
 
     def set_lr(self, lr):
         # Set new learning rate
