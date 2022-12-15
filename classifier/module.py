@@ -41,8 +41,8 @@ class CIFAR10Module(pl.LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
 
         self.accuracy = Accuracy()
-        self.allEmbeddings = torch.zeros(0, 512).cuda()
-        self.allLabels = torch.zeros(0).cuda()
+        # self.allEmbeddings = torch.zeros(0, 512).cuda()
+        # self.allLabels = torch.zeros(0).cuda()
 
         self.model = all_classifiers[self.hparams.classifier]
         self.tsne = TSNE(random_state=0)
@@ -106,10 +106,8 @@ class CIFAR10Module(pl.LightningModule):
         embeddings, predictions, labels = self.execute_model(batch)
         triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
 
-        self.allEmbeddings = torch.cat((self.allEmbeddings, embeddings), 0)
-        self.allLabels = torch.cat((self.allLabels, labels), 0)
-        # if batch_nb == 99:
-        #     self.display_results(embeddings, labels, batch_nb)
+        # self.allEmbeddings = torch.cat((self.allEmbeddings, embeddings), 0)
+        # self.allLabels = torch.cat((self.allLabels, labels), 0)
 
         self.log("loss/train_triplet", triplet_loss)
         self.log("loss/train_cls", cls_loss)
@@ -123,8 +121,8 @@ class CIFAR10Module(pl.LightningModule):
         self.log("loss/val_cls", cls_loss)
         self.log("loss/val", triplet_loss + cls_loss)
         self.log("acc/val", accuracy)
-        if batch_nb == 4:
-            self.separateByClass()
+        # if batch_nb == 4:
+        #     self.separateByClass()
 
     def separateByClass(self):
         allClassEmbeddings = torch.zeros(10, 5000, self.allEmbeddings.size(1))
