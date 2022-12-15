@@ -24,7 +24,7 @@ Feature vector files must be downloaded first and replaced in the 'load_features
 Note: Mixmatch feature vectors are 128 dims in size so zdim must be changed to (128,1,1) instead of (256,1,1) if using mixmatch feature vectors
 
 **Mixmatch Implementation**
-README to train mixmatch from scratch can be found under the mixmatch folder. The code is currently set up to train on the CIFAR-10 dataset. To extract features from the trained model requires uncommenting and commenting of specific code in the following files: model/wideresnet.py, train.py, dataset/cifar10.py 
+README to train mixmatch from scratch can be found under the mixmatch folder. The code is currently set up to train on the CIFAR-10 dataset. To extract features from the trained model requires uncommenting and commenting of specific code in the following files: model/wideresnet.py, train.py, dataset/cifar10.py. Instructions for lines to comment/uncomment are provided in each of these files
 
 **REFERENCES**
 Mixmatch implementation is borrowed from: https://github.com/YU1ut/MixMatch-pytorch
