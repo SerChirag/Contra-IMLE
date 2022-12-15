@@ -34,6 +34,8 @@ README to train mixmatch from scratch can be found under the mixmatch folder. Th
 
 **REFERENCES**
 
+IMLE Code Taken from: https://www.sfu.ca/~keli/projects/imle/
+
 Triplet loss model build off of classifiers from: https://github.com/huyvnphan/PyTorch_CIFAR10
 
 Mixmatch implementation is borrowed from: https://github.com/YU1ut/MixMatch-pytorch
