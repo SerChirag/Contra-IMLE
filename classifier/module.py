@@ -31,23 +31,25 @@ all_classifiers = {
     # "inception_v3": inception_v3(),
 }
 
-
 class CIFAR10Module(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
         self.hparams = hparams
 
-        #self.miner = miners.MultiSimilarityMiner()
-        #self.tripletlossmetric = losses.TripletMarginLoss(margin=self.hparams.triplet_margin, smooth_loss=True)
+        self.miner = miners.MultiSimilarityMiner()
+        self.tripletlossmetric = losses.TripletMarginLoss(margin=1, smooth_loss=True)
         self.criterion = torch.nn.CrossEntropyLoss()
 
         self.accuracy = Accuracy()
+        # self.allEmbeddings = torch.zeros(0, 512).cuda()
+        # self.allLabels = torch.zeros(0).cuda()
 
         self.model = all_classifiers[self.hparams.classifier]
         self.tsne = TSNE(random_state=0)
-        self.tripletlossconstant = self.hparams.triplet_constant
-
-        self.tripletlossmetric = nn.TripletMarginLoss(margin=self.hparams.triplet_margin, reduction='mean')
+        self.tripletlossconstant = 1
+        # self.tripletlossconstant = self.hparams.triplet_constant
+        #
+        # self.tripletlossmetric = nn.TripletMarginLoss(margin=self.hparams.triplet_margin, reduction='mean')
 
     def calculate_centroids(self, embeddings, labels):
         positives = torch.zeros(embeddings.size())  # should be Batch x Embedding
@@ -90,7 +92,7 @@ class CIFAR10Module(pl.LightningModule):
 
     def forward(self, batch):
         embeddings, predictions, labels = self.execute_model(batch)
-        loss1, loss2, accuracy = self.calculate_loss_acc2(embeddings, predictions, labels)
+        loss1, loss2, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
         return loss1, loss2, accuracy
 
     def calculate_loss_acc(self, embeddings, predictions, labels):
@@ -102,9 +104,10 @@ class CIFAR10Module(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
         embeddings, predictions, labels = self.execute_model(batch)
-        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc2(embeddings, predictions, labels)
-        # if batch_nb == 99:
-        #     self.display_results(embeddings, labels, batch_nb)
+        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
+
+        # self.allEmbeddings = torch.cat((self.allEmbeddings, embeddings), 0)
+        # self.allLabels = torch.cat((self.allLabels, labels), 0)
 
         self.log("loss/train_triplet", triplet_loss)
         self.log("loss/train_cls", cls_loss)
@@ -118,10 +121,25 @@ class CIFAR10Module(pl.LightningModule):
         self.log("loss/val_cls", cls_loss)
         self.log("loss/val", triplet_loss + cls_loss)
         self.log("acc/val", accuracy)
+        # if batch_nb == 4:
+        #     self.separateByClass()
+
+    def separateByClass(self):
+        allClassEmbeddings = torch.zeros(10, 5000, self.allEmbeddings.size(1))
+        for i in range(10):
+            ids = self.allLabels == i
+            ids = ids.nonzero()
+            curClassEmbeddings = self.allEmbeddings[ids].squeeze()
+            allClassEmbeddings[i] = curClassEmbeddings
+        import pickle
+        my_file = open("feature_vectors_mtl.pkl", "wb")
+        pickle.dump(allClassEmbeddings, my_file)
+        my_file.close()
+        exit(0)
 
     def test_step(self, batch, batch_nb):
         embeddings, predictions, labels = self.execute_model(batch)
-        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc2(embeddings, predictions, labels)
+        triplet_loss, cls_loss, accuracy = self.calculate_loss_acc(embeddings, predictions, labels)
         #self.display_results(embeddings, labels)
         self.log("acc/test", accuracy)
 

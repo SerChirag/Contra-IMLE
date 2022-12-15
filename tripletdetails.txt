@@ -1,0 +1,21 @@
+
+Just say marginal using .. was useless
+
+Centroid Triplet Loss:
+	Noise = 0.1
+	Epochs = 500
+	Time = Total time: 1397.19
+	Epoch time: 1.68,
+
+Centroid Triplet Loss:
+	Noise = 0.01
+	Epochs = 500
+	Time =
+Epoch time: 1.72, and total time: 1396.96
+Total time: 1401.73
+
+
+Centroid Triplet Loss:
+	Noise = 0.3
+	Epochs = 500
+	Time = 

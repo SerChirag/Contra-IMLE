@@ -54,7 +54,7 @@ def plot_noisegraph(file_name: str, og_samples: np.ndarray, noisy_samples: np.nd
 
 def main():
     np.random.seed(20501090)
-    noise_level = 0.03
+    noise_level = 0.3
     num_samples = 1000
     feature_vectors = load_features()
     og_samples, noisy_samples, labels = get_latent(num_samples, feature_vectors, noise_level)

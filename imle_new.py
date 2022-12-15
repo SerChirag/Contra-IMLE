@@ -54,6 +54,7 @@ from tqdm import tqdm
 from collections import deque
 from sklearn.preprocessing import normalize
 import signal
+import time
 try:
     from itertools import izip as zip
 except ImportError: # Python 3
@@ -113,7 +114,7 @@ class RandomDataset(data.Dataset):
 class ZippedDataset(data.Dataset):
 
     def __init__(self, *datasets):
-        assert all(len(datasets[0]) == len(dataset) for dataset in datasets)
+        #assert all(len(datasets[0]) == len(dataset) for dataset in datasets)
         self.datasets = datasets
 
     def __getitem__(self, index):
@@ -197,7 +198,7 @@ class IMLE():
                 self.model = nn.DataParallel(self.model)
         self.dci_db = None
         self.starting_epoch = 0
-        self.distance_separation = 0.5
+        self.distance_separation = 0.01
         self.init_z_data = None
         self.feature_vectors = None
         self.init_z_data_file = None
@@ -206,6 +207,8 @@ class IMLE():
         self.tracked_context = dict()   # Populated automatically
         self.tracked_content = dict()   # Populated manually
         self.load_features()
+        from sklearn.manifold import TSNE
+        self.tsne = TSNE(random_state=0)
 
     def load_features(self):
         with open('feature_vectors.pkl', 'rb') as f:
@@ -220,11 +223,26 @@ class IMLE():
             samples.append(self.feature_vectors[class_condition[i]][sample_condition[i]])
         samples=np.array(samples)
         noise = np.random.normal(0, np.sqrt(1.0/z_dim)*self.distance_separation , (num_of_samples,z_dim))
-        noisy_samples = normalize(samples+noise,axis=1)
-        noisy_samples = np.expand_dims(noisy_samples, axis=-1)
+        print(self.feature_vectors.size())
+        self.plot_noisegraph("noiseplot.png", samples, samples+noise)
+        noisy_samples_og = normalize(samples+noise,axis=1)
+        noisy_samples = np.expand_dims(noisy_samples_og, axis=-1)
         noisy_samples = np.expand_dims(noisy_samples, axis=-1).astype(np.float32)
         #return torch.randn(*((num_of_samples,)+self.z_dim))
         return torch.from_numpy(noisy_samples)
+
+    def plot_noisegraph(self, file_name: str, og_samples: np.ndarray, noisy_samples: np.ndarray) -> None:
+        # Projects and display original and noisy samples on a 3D sphere
+        og_tsne_embeds = self.tsne.fit_transform(og_samples)
+        noisy_tsne_embeds = self.tsne.fit_transform(noisy_samples)
+        fig, ax = plt.figure()
+        ax.scatter(og_tsne_embeds[:, 0], og_tsne_embeds[:, 1], c='tab:green', label="Original")
+        ax.scatter(noisy_tsne_embeds[:, 0], noisy_tsne_embeds[:, 1], c='tab:red', label="Noisy")
+        ax.legend()
+        #plt.scatter(train_tsne_embeds[:, 0], train_tsne_embeds[:, 1], c=labels.cpu().numpy(), label="Noisy")
+        fig.savefig(file_name)
+        plt.close(fig)
+        print("Noise plot saved to %s. " % (file_name))
 
     def set_lr(self, lr):
         # Set new learning rate
@@ -452,9 +470,12 @@ class IMLE():
         if self.testing_only:
             print("Warning: Loaded model weights, but did not load optimizer state or epoch number. Proceed anyway?")
             self._user_confirm()
-        
+
+        start_time = time.time()
         for epoch in range(self.starting_epoch, config.num_epochs):
-            
+
+            start_epoch = time.time()
+
             #print("Epoch %d: %d, %d, Starting? %s Key Epoch? %s" % (epoch, self.starting_epoch, epoch % hyperparams.decay_step, repr(epoch == self.starting_epoch), repr(epoch % hyperparams.decay_step == 0)))
             #print(epoch)
             #print(hyperparams.decay_step)
@@ -522,7 +543,7 @@ class IMLE():
                                     cur_sample_batch_size = batch_size
                                 
                                 cur_batch = slice(i*batch_size, i*batch_size+cur_sample_batch_size)
-                                
+
                                 cur_batch_z = self.get_latent(cur_sample_batch_size).to(device=device)
                                 cur_batch_samples = self.model(cur_batch_z)
                                 cur_batch_z_np = cur_batch_z.cpu().data.numpy()
@@ -645,8 +666,12 @@ class IMLE():
                 plot_now = False
                 self.plot("epoch:train", "end", {"epoch": epoch}, config)
                 signal.signal(signal.SIGINT, signal_handler_menu)
+
+            end_epoch = time.time()
+            print("Epoch time: %.2f, and total time: %.2f" % (end_epoch - start_epoch, end_epoch - start_time))
         
         ## Why is this code added ?
+        print("Total time: %.2f" % (time.time() - start_time))
 
         print(losses)        
         signal.signal(signal.SIGINT, signal_handler_noop)
@@ -742,15 +767,16 @@ def main():
     parser.add_argument('-j', '--threads', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
     parser.add_argument('--seed', default=None, type=int,
-                    help='seed for initializing training. ')
+                        help='seed for initializing training. ')
     parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-r', '--resume', default='', type=str, metavar='PATH',
-                    help='path to latest checkpoint (default: none)')
+                        help='path to latest checkpoint (default: none)')
     parser.add_argument('-o', '--out-prefix', default='checkpoints/', type=str, metavar='STR',
-                    help='prefix for checkpoint path')
+                        help='prefix for checkpoint path')
     parser.add_argument('-f', '--check-freq', default=5, type=int, metavar='N',
-                    help='the number of epochs that pass before a checkpoint is saved')
+                        help='the number of epochs that pass before a checkpoint is saved')
+    parser.add_argument('-b', '--batch-size', default=64, type=int)
 
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -797,7 +823,7 @@ def main():
     # decay_rate: Rate of learning rate decay
     # staleness: Number of times to re-use nearest samples
     # num_samples_factor: Ratio of the number of generated samples to the number of real data examples
-    hyperparams = Hyperparams(optimizer="adam", base_lr=1e-3, momentum=(0.5, 0.999), batch_size=64, sample_db_size=1024, decay_step=25, decay_rate=1.0, staleness=200, num_samples_factor=15)
+    hyperparams = Hyperparams(optimizer="adam", base_lr=1e-3, momentum=(0.5, 0.999), batch_size=args.batch_size, sample_db_size=1024, decay_step=25, decay_rate=1.0, staleness=200, num_samples_factor=15)
 
     config = Config(num_epochs=args.epochs, shuffle_data=True, path_prefix=args.out_prefix, checkpoint_interval=args.check_freq, plot_interval=1, plot_subinterval=None, track_subinterval=1, device=args.device, disable_cuda=args.disable_cuda, disable_multigpu=args.disable_multigpu, num_threads=args.threads, seed=args.seed, plot_width=10, plot_height=10, plot_test_samples_height=3)
     
@@ -807,7 +833,7 @@ def main():
     ##train_output = np.random.randn(128, 3, 28, 28).astype(np.float32)
 
 
-    z_dim = (256,1,1)
+    z_dim = (512,1,1)
     new_trainset = np.moveaxis(testset.data,-1,1).astype(np.float32)
     new_trainset = (new_trainset - np.min(new_trainset)) / (np.max(new_trainset) - np.min(new_trainset))
     
